@@ -7,6 +7,8 @@ DATA_KEY_PASSWORD = "password"
 DATA_KEY_RECORD_ID_COUNTER = "record_id_counter"
 DATA_KEY_DATA = "data"
 
+def data_file_exists():
+    return os.path.exists(DATA_FILE) and os.path.isfile(DATA_FILE)
 
 # TODO: Use logging
 

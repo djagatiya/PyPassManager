@@ -2,7 +2,7 @@ import logging
 
 from PySide2 import QtWidgets
 
-from pass_manager.data import DataManager
+from pass_manager.data import DataManager, data_file_exists
 
 class Login(QtWidgets.QWidget):
 
@@ -28,9 +28,6 @@ class Home(QtWidgets.QWidget):
         table.setColumnCount(5)
         table.setHorizontalHeaderLabels(["Id", "Title", "UserName", "Password", "Notes"])
 
-        for row in manager.get_data():
-            self.append_row(row)
-
         table.setEditTriggers(QtWidgets.QAbstractItemView.NoEditTriggers)
         table.resizeColumnsToContents()
 
@@ -54,6 +51,11 @@ class Home(QtWidgets.QWidget):
         layout.addWidget(self.table)
         layout.addWidget(button_widget_panel)
         self.setLayout(layout)
+
+    def load_table_data(self):
+        logging.debug("Call for load table")
+        for row in manager.get_data():
+            self.append_row(row)
 
     def append_row(self, items):
         row_index = self.table.rowCount()
@@ -97,7 +99,6 @@ class Form(QtWidgets.QWidget):
 # Data manager
 # TODO : REPLACE with "sqlite"
 manager = DataManager()
-manager.login("1234")
 
 
 class MainWindow(QtWidgets.QMainWindow):
@@ -133,9 +134,26 @@ class MainWindow(QtWidgets.QMainWindow):
         # this property will handle single form for edit and save
         self.row_index = -1
 
+        if not data_file_exists():
+            self.w_login.login_btn.setText("Setup")
+
+    def load_table_and_show_home(self):
+        self.w_home.load_table_data()
+        self.show_home()
+
+
     def on_login(self):
-        if self.w_login.pass_enter.text() == "master":
-            self.show_home()
+        pass_str = self.w_login.pass_enter.text()
+       
+        # SETUP
+        if self.w_login.login_btn.text() == "Setup":
+            manager.setup(pass_str)
+            self.load_table_and_show_home()
+            return
+
+        # LOGIN
+        if manager.login(pass_str):
+            self.load_table_and_show_home()
         else:
             box = QtWidgets.QMessageBox(icon=QtWidgets.QMessageBox.Critical, text="Login error.")
             box.exec_()
