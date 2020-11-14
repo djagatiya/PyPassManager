@@ -1,44 +1,50 @@
 import json
 import os
 import logging
+from cryptography.fernet import Fernet
 
-DATA_FILE = "data_file.json"
-DATA_KEY_PASSWORD = "password"
+KEY_FILE = "pass_manager.key"
+DATA_FILE = "pass_manager.data"
 DATA_KEY_RECORD_ID_COUNTER = "record_id_counter"
 DATA_KEY_DATA = "data"
-
-def data_file_exists():
-    return os.path.exists(DATA_FILE) and os.path.isfile(DATA_FILE)
-
-# TODO: Use logging
 
 class DataManager:
 
     def __init__(self):
+
         logging.debug("Initialize DataManager.")
-        self.__json_data = {}
+        
+        if not os.path.exists(KEY_FILE) and not os.path.exists(DATA_FILE):
+            logging.debug("Both files not exist, so we need to do setup..")
+            # Do setup
+            self.key = Fernet.generate_key()
 
-    def setup(self, password):
-        """
-        todo: Imeplemtation is pending....
-        """
-        self.__json_data = {
-                DATA_KEY_PASSWORD: password, 
-                DATA_KEY_RECORD_ID_COUNTER: 0, 
-                DATA_KEY_DATA: {}
-        }
-        print("Do Setup:", self.__json_data)
+            # save key
+            with open(KEY_FILE, mode="wb") as _token_file:
+                _token_file.write(self.key)
 
-    def login(self, password):
-        """
-        Load json data if password is correct.
-        """
-        with open(DATA_FILE, "r") as json_file:
-            data = json.load(json_file)
-        if data[DATA_KEY_PASSWORD] == password:
-            self.__json_data = data
-            return True
-        return False
+            self.__json_data = {
+                    DATA_KEY_RECORD_ID_COUNTER:0,
+                    DATA_KEY_DATA:{}
+            }
+
+        elif not os.path.exists(KEY_FILE):
+            raise Exception("key file missing at working directory.")
+        elif not os.path.exists(DATA_FILE):
+            raise Exception("data file missing at working directory.")
+        else:
+            logging.info("Both files are available.")
+
+            with open(KEY_FILE, mode='rb') as _token_file:
+                self.key = _token_file.read()
+            
+            with open(DATA_FILE, mode='rb') as _data_file:
+                data = _data_file.read()
+                data = Fernet(self.key).decrypt(data)
+                data = data.decode('utf-8')
+
+            self.__json_data = eval(data)
+
 
     def add(self, title, name, password, notes):
         logging.debug(f"{title}, {name}, {password}, {notes}")
@@ -70,9 +76,7 @@ class DataManager:
         return result_data
 
     def close(self):
-        if self.__json_data != {}:
-            with open(DATA_FILE, "w") as json_data_file:
-                json.dump(self.__json_data, json_data_file)
-                print("Data saved:", DATA_FILE)
-        else:
-            print("Empty json not saved.")
+        data = str(self.__json_data).encode('utf-8')
+        data = Fernet(self.key).encrypt(data)
+        with open(DATA_FILE, mode="wb") as _out:
+            _out.write(data)

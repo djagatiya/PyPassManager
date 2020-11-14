@@ -2,19 +2,9 @@ import logging
 
 from PySide2 import QtWidgets
 
-from pass_manager.data import DataManager, data_file_exists
+from pass_manager.data import DataManager
 
-class Login(QtWidgets.QWidget):
-
-    def __init__(self):
-        super().__init__()
-        layout = QtWidgets.QHBoxLayout()
-        self.pass_enter = QtWidgets.QLineEdit()
-        layout.addWidget(self.pass_enter)
-        self.login_btn = QtWidgets.QPushButton(text="Login")
-        layout.addWidget(self.login_btn)
-        self.setLayout(layout)
-
+manager = DataManager()
 
 class Home(QtWidgets.QWidget):
 
@@ -96,10 +86,6 @@ class Form(QtWidgets.QWidget):
 
         self.setLayout(form_layout)
 
-# Data manager
-# TODO : REPLACE with "sqlite"
-manager = DataManager()
-
 
 class MainWindow(QtWidgets.QMainWindow):
 
@@ -108,18 +94,13 @@ class MainWindow(QtWidgets.QMainWindow):
 
         self.stacked = QtWidgets.QStackedWidget()
 
-        self.w_login = Login()
         self.w_home = Home()
         self.w_form = Form()
 
-        self.stacked.addWidget(self.w_login)
         self.stacked.addWidget(self.w_home)
         self.stacked.addWidget(self.w_form)
 
         self.setCentralWidget(self.stacked)
-
-        # login event
-        self.w_login.login_btn.clicked.connect(self.on_login)
 
         # home event
         self.w_home.add_button.clicked.connect(self.show_form)
@@ -134,30 +115,8 @@ class MainWindow(QtWidgets.QMainWindow):
         # this property will handle single form for edit and save
         self.row_index = -1
 
-        if not data_file_exists():
-            self.w_login.login_btn.setText("Setup")
-
-    def load_table_and_show_home(self):
         self.w_home.load_table_data()
-        self.show_home()
 
-
-    def on_login(self):
-        pass_str = self.w_login.pass_enter.text()
-       
-        # SETUP
-        if self.w_login.login_btn.text() == "Setup":
-            manager.setup(pass_str)
-            self.load_table_and_show_home()
-            return
-
-        # LOGIN
-        if manager.login(pass_str):
-            self.load_table_and_show_home()
-        else:
-            box = QtWidgets.QMessageBox(icon=QtWidgets.QMessageBox.Critical, text="Login error.")
-            box.exec_()
-            print("Login Failed..")
 
     def reset_form(self):
         self.row_index = -1
@@ -196,15 +155,12 @@ class MainWindow(QtWidgets.QMainWindow):
         # reset at the end of the operation
         self.row_index = -1
 
-    def show_login(self):
-        # TODO: No need to show explicitly
-        self.stacked.setCurrentIndex(0)
 
     def show_home(self):
-        self.stacked.setCurrentIndex(1)
+        self.stacked.setCurrentIndex(0)
 
     def show_form(self):
-        self.stacked.setCurrentIndex(2)
+        self.stacked.setCurrentIndex(1)
 
     def add_click(self):
         self.show_form()
