@@ -1,0 +1,5 @@
+.vim-edit/
+.git/
+pass_manager/__pycache__
+tags
+*.sh

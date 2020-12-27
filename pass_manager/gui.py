@@ -4,12 +4,13 @@ from PySide2 import QtWidgets
 
 from pass_manager.data import DataManager
 
-manager = DataManager()
 
 class Home(QtWidgets.QWidget):
 
-    def __init__(self):
+    def __init__(self, manager):
         super().__init__()
+
+        self.manager = manager
 
         # setup table
         table = QtWidgets.QTableWidget()
@@ -44,7 +45,7 @@ class Home(QtWidgets.QWidget):
 
     def load_table_data(self):
         logging.debug("Call for load table")
-        for row in manager.get_data():
+        for row in self.manager.get_data():
             self.append_row(row)
 
     def append_row(self, items):
@@ -59,8 +60,10 @@ class Home(QtWidgets.QWidget):
 
 class Form(QtWidgets.QWidget):
 
-    def __init__(self):
+    def __init__(self, manager):
         super().__init__()
+
+        self.manager = manager
 
         form_layout = QtWidgets.QFormLayout()
 
@@ -89,13 +92,15 @@ class Form(QtWidgets.QWidget):
 
 class MainWindow(QtWidgets.QMainWindow):
 
-    def __init__(self):
+    def __init__(self, out_path):
         super().__init__()
+
+        self.manager = DataManager(out_path)
 
         self.stacked = QtWidgets.QStackedWidget()
 
-        self.w_home = Home()
-        self.w_form = Form()
+        self.w_home = Home(self.manager)
+        self.w_form = Form(self.manager)
 
         self.stacked.addWidget(self.w_home)
         self.stacked.addWidget(self.w_form)
@@ -135,7 +140,7 @@ class MainWindow(QtWidgets.QMainWindow):
         password = self.w_form.pass_word_edit.text()
         note = self.w_form.note_edit.text()
         if self.row_index == -1:
-            _id = manager.add(title, username, password, note)
+            _id = self.manager.add(title, username, password, note)
             logging.info(f"{_id} generated while saving record.")
             self.w_home.append_row([str(_id), *[title, username, "***", note]])
 
@@ -146,7 +151,7 @@ class MainWindow(QtWidgets.QMainWindow):
             logging.info(f"Going to update: {update_data}")
             
             # update to data manager
-            manager.update(*update_data)
+            self.manager.update(*update_data)
             
             # update to table widget
             update_data[3] = "***"
@@ -172,7 +177,7 @@ class MainWindow(QtWidgets.QMainWindow):
         fetch_id = self.w_home.table.item(self.row_index, 0).text()
         fetch_title = self.w_home.table.item(row, 1).text()
         fetch_username = self.w_home.table.item(row, 2).text()
-        fetch_password = manager.get_password(fetch_id)
+        fetch_password = self.manager.get_password(fetch_id)
         fetch_notes = self.w_home.table.item(row, 4).text()
 
         logging.info(f"Fetch: {row}, {fetch_title}, "  \
@@ -208,11 +213,11 @@ class MainWindow(QtWidgets.QMainWindow):
         self.w_home.table.removeRow(row.row())
 
         # remove from data manager
-        manager.remove(selected_id)
+        self.manager.remove(selected_id)
         
         pass
 
     def closeEvent(self, event):
         print("Close event")
         super().closeEvent(event)
-        manager.close()
+        self.manager.close()

@@ -10,7 +10,14 @@ DATA_KEY_DATA = "data"
 
 class DataManager:
 
-    def __init__(self):
+    def __init__(self, out_path):
+        global KEY_FILE, DATA_FILE
+
+        KEY_FILE = os.path.join(out_path, KEY_FILE)
+        DATA_FILE = os.path.join(out_path, DATA_FILE)
+
+        print("Key:", KEY_FILE)
+        print("Data:", DATA_FILE)
 
         logging.debug("Initialize DataManager.")
         

@@ -3,6 +3,7 @@ from PySide2 import QtWidgets
 from pass_manager.gui import MainWindow
 
 import logging
+import sys
 
 # ------------- SETUP LOGGER -------------
 
@@ -19,8 +20,11 @@ logging.debug("Logger setup done.")
 # ---------------------------------------
 
 if __name__ == "__main__":
+
+    print("Args:", sys.argv)
+
     app = QtWidgets.QApplication([])
-    main_win = MainWindow()
+    main_win = MainWindow(sys.argv[1])
     main_win.resize(800, 400)
     main_win.show()
     app.exec_()
